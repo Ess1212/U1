@@ -1,13 +1,14 @@
+
 # =============================================================================
-# POWER DISPATCH DASHBOARD
-# PART 1 — FINAL (ACTIVE + REACTIVE POWER, LIVE CLOCK, UNDO/REDO)
+# ENERGY POWER DASHBOARD
+# PART 1 — FINAL FOUNDATION (BLUE + WHITE)
 # =============================================================================
 
 import streamlit as st
 import pandas as pd
 from datetime import datetime
 from zoneinfo import ZoneInfo
-from typing import Tuple, Dict
+from typing import Dict, Tuple
 from streamlit.components.v1 import html
 
 # =============================================================================
@@ -24,11 +25,12 @@ st.set_page_config(
 # CONSTANTS
 # =============================================================================
 
-APP_TITLE = "POWER DISPATCH DASHBOARD"
+APP_TITLE = "Power Dispatch Dashboard"
+COMPANY_NAME = "SchneiTech Group"
+
 SWG_LIST = ["SWG1", "SWG2", "SWG3"]
 
-# Internal limits
-POWER_MIN, POWER_MAX = -150.0, 150.0
+ACTIVE_MIN, ACTIVE_MAX = -150.0, 150.0
 REACTIVE_MIN, REACTIVE_MAX = -150.0, 150.0
 SOC_MIN, SOC_MAX = 0.0, 100.0
 
@@ -36,7 +38,7 @@ LOCAL_TZ = ZoneInfo("Asia/Phnom_Penh")
 DISPLAY_DT_FORMAT = "%m/%d/%Y %I:%M:%S %p"
 
 # =============================================================================
-# REMOVE STREAMLIT UI
+# REMOVE STREAMLIT DEFAULT UI
 # =============================================================================
 
 st.markdown(
@@ -52,54 +54,70 @@ section.main > div {padding-top:0rem;}
 )
 
 # =============================================================================
-# DASHBOARD CSS
+# BLUE & WHITE DASHBOARD CSS
 # =============================================================================
 
 st.markdown(
     """
 <style>
+
+/* ===== BASE ===== */
 html, body {
-    background-color:#f3f6fb;
-    font-family:Inter, sans-serif;
-    color:#1f2937;
+    background-color: #ffffff;
+    font-family: "Segoe UI", Inter, sans-serif;
+    color: #0f172a;
 }
+
+/* ===== HEADER ===== */
 .dashboard-header {
-    background:#1f3a8a;
-    color:white;
-    padding:26px;
-    border-radius:14px;
-    font-size:34px;
-    font-weight:800;
-    text-align:center;
-    margin-bottom:6px;
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    color: white;
+    padding: 28px 32px;
+    border-radius: 18px;
+    font-size: 42px;
+    font-weight: 900;
+    box-shadow: 0 14px 36px rgba(0,0,0,0.22);
 }
+
+/* ===== CARD ===== */
 .card {
-    background:white;
-    border-radius:14px;
-    padding:22px;
-    box-shadow:0 6px 20px rgba(0,0,0,0.08);
-    margin-bottom:24px;
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 26px;
+    box-shadow: 0 10px 26px rgba(0,0,0,0.1);
 }
+
+/* ===== SECTION TITLE ===== */
 .section-title {
-    font-size:22px;
-    font-weight:700;
-    color:#1f3a8a;
-    margin-bottom:14px;
+    font-size: 22px;
+    font-weight: 800;
+    color: #1e3a8a;
+    margin-bottom: 16px;
 }
+
+/* ===== SWG TITLE ===== */
 .swg-title {
-    font-size:18px;
-    font-weight:600;
-    margin-bottom:8px;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 10px;
 }
+
+/* ===== BUTTON ===== */
 button[kind="primary"] {
-    background-color:#2563eb;
-    border-radius:10px;
-    font-size:15px;
-    font-weight:600;
+    background-color: #2563eb;
+    border-radius: 10px;
+    font-size: 15px;
+    font-weight: 700;
+    height: 46px;
 }
+
+/* ===== TABLE ===== */
 [data-testid="stDataFrame"] {
-    border-radius:10px;
+    border-radius: 12px;
+    font-size: 14px;
 }
+
 </style>
 """,
     unsafe_allow_html=True
@@ -109,34 +127,75 @@ button[kind="primary"] {
 # HEADER
 # =============================================================================
 
-st.markdown(f'<div class="dashboard-header">{APP_TITLE}</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# LIVE CLOCK (RELIABLE)
-# =============================================================================
-
-html(
-    """
-<div style="text-align:center;font-size:17px;font-weight:600;color:#475569;margin-bottom:26px;">
-  <span id="clock"></span>
-</div>
-<script>
-function tick(){
-  const n=new Date();
-  document.getElementById("clock").innerHTML=
-    n.toLocaleString([],{
-      weekday:'short',year:'numeric',month:'short',day:'numeric',
-      hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true
-    });
-}
-setInterval(tick,1000);tick();
-</script>
-""",
-    height=40
+st.markdown(
+    f'<div class="dashboard-header">{APP_TITLE}</div>',
+    unsafe_allow_html=True
 )
 
 # =============================================================================
-# SESSION STATE
+# SUBTITLE BAR WITH ICONS + LIVE CLOCK (MATCH HEADER)
+# =============================================================================
+
+html(
+    f"""
+<div style="
+    background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+    color: white;
+    border-radius: 14px;
+    padding: 12px 22px;
+    margin-top: 10px;
+    margin-bottom: 26px;
+    font-size: 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;   /* 👈 LEFT ALIGN */
+    gap: 14px;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.18);
+">
+    <span>🏢 <strong>{COMPANY_NAME}</strong></span>
+    <span>|</span>
+    <span style="color:#22c55e;">🟢</span>
+    <span id="date-text"></span>
+    <span>|</span>
+    <span>🕒 <span id="time-text"></span></span>
+</div>
+
+<script>
+function updateClockBar() {{
+    const now = new Date();
+
+    const dateOptions = {{
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    }};
+
+    const timeOptions = {{
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+    }};
+
+    document.getElementById("date-text").innerHTML =
+        now.toLocaleDateString([], dateOptions);
+
+    document.getElementById("time-text").innerHTML =
+        now.toLocaleTimeString([], timeOptions);
+}}
+
+setInterval(updateClockBar, 1000);
+updateClockBar();
+</script>
+""",
+    height=56
+)
+
+
+# =============================================================================
+# SESSION STATE INITIALIZATION
 # =============================================================================
 
 def init_state():
@@ -145,12 +204,11 @@ def init_state():
             st.session_state[f"{swg}_data"] = pd.DataFrame(
                 columns=[
                     f"{swg}_DateTime",
-                    f"{swg}_Power(MW)",
-                    f"{swg}_Reactive(Mvar)",
-                    f"{swg}_SOC(%)",
+                    "Active Power (MW)",
+                    "Reactive Power (Mvar)",
+                    "SOC (%)"
                 ]
             )
-
     if "history" not in st.session_state:
         st.session_state.history = []
     if "redo_stack" not in st.session_state:
@@ -158,94 +216,157 @@ def init_state():
 
 init_state()
 
+
 # =============================================================================
-# UNDO / REDO
+# UNDO / REDO CORE (BULLETPROOF)
 # =============================================================================
 
-def snapshot():
+def snapshot_state():
+    """
+    Save current state BEFORE any user action that modifies data.
+    This invalidates the redo stack.
+    """
     st.session_state.history.append({
         swg: st.session_state[f"{swg}_data"].copy(deep=True)
         for swg in SWG_LIST
     })
     st.session_state.redo_stack.clear()
 
-def restore(snap: Dict[str, pd.DataFrame]):
+
+def restore_state(snapshot: Dict[str, pd.DataFrame]):
+    """Restore a previously saved snapshot"""
     for swg in SWG_LIST:
-        st.session_state[f"{swg}_data"] = snap[swg].copy(deep=True)
+        st.session_state[f"{swg}_data"] = snapshot[swg].copy(deep=True)
+
+
+def undo_action() -> bool:
+    """
+    Perform undo safely.
+    Returns True if undo succeeded.
+    """
+    if len(st.session_state.history) == 0:
+        return False
+
+    # Save current state for redo
+    st.session_state.redo_stack.append({
+        swg: st.session_state[f"{swg}_data"].copy(deep=True)
+        for swg in SWG_LIST
+    })
+
+    prev_snapshot = st.session_state.history.pop()
+    restore_state(prev_snapshot)
+    return True
+
+
+def redo_action() -> bool:
+    """
+    Perform redo safely.
+    Returns True if redo succeeded.
+    """
+    if len(st.session_state.redo_stack) == 0:
+        return False
+
+    # Save current state for undo
+    st.session_state.history.append({
+        swg: st.session_state[f"{swg}_data"].copy(deep=True)
+        for swg in SWG_LIST
+    })
+
+    next_snapshot = st.session_state.redo_stack.pop()
+    restore_state(next_snapshot)
+    return True
+
+# =============================================================================
+# UNDO / REDO UI (SAFE BUTTONS)
+# =============================================================================
 
 uc, rc = st.columns(2)
+
 with uc:
-    if st.button("↩ Undo", use_container_width=True) and st.session_state.history:
-        st.session_state.redo_stack.append({
-            swg: st.session_state[f"{swg}_data"].copy(deep=True)
-            for swg in SWG_LIST
-        })
-        restore(st.session_state.history.pop())
-        st.success("Undo applied")
+    if st.button(
+        "↩ Undo",
+        use_container_width=True,
+        disabled=len(st.session_state.history) == 0
+    ):
+        if undo_action():
+            st.success("Undo applied")
 
 with rc:
-    if st.button("↪ Redo", use_container_width=True) and st.session_state.redo_stack:
-        snapshot()
-        restore(st.session_state.redo_stack.pop())
-        st.success("Redo applied")
+    if st.button(
+        "↪ Redo",
+        use_container_width=True,
+        disabled=len(st.session_state.redo_stack) == 0
+    ):
+        if redo_action():
+            st.success("Redo applied")
+
 
 # =============================================================================
-# VALIDATION
+# INPUT DATA
 # =============================================================================
 
-def validate(power, reactive, soc) -> Tuple[bool, str]:
-    if power is None or reactive is None or soc is None:
-        return False, "All fields are required"
-    if not POWER_MIN <= power <= POWER_MAX:
-        return False, "Power out of range"
-    if not REACTIVE_MIN <= reactive <= REACTIVE_MAX:
-        return False, "Reactive power out of range"
-    if not SOC_MIN <= soc <= SOC_MAX:
-        return False, "SOC out of range"
-    return True, ""
+st.markdown(
+    """
+<div class="card">
+    <div class="section-title">📥 Input Data</div>
+    <p style="color:#6b7280;font-size:13px;max-width:900px;">
+        Enter real-time operational data for each SWG including
+        Active Power, Reactive Power, and State of Charge (SOC).
+        All inputs are validated against system limits and every
+        successful entry is tracked with full Undo / Redo support.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
-# =============================================================================
-# INSERT ROW
-# =============================================================================
-
-def insert_row(swg, power, reactive, soc):
-    snapshot()
-    row = {
-        f"{swg}_DateTime": datetime.now(tz=LOCAL_TZ),
-        f"{swg}_Power(MW)": power,
-        f"{swg}_Reactive(Mvar)": reactive,
-        f"{swg}_SOC(%)": soc,
-    }
-    st.session_state[f"{swg}_data"] = pd.concat(
-        [st.session_state[f"{swg}_data"], pd.DataFrame([row])],
-        ignore_index=True
-    )
-
-# =============================================================================
-# INPUT SECTION
-# =============================================================================
-
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Input Data</div>', unsafe_allow_html=True)
 
 cols = st.columns(3)
 
+def validate_inputs(p, q, s) -> Tuple[bool, str]:
+    if p is None or q is None or s is None:
+        return False, "All fields are required"
+    if not ACTIVE_MIN <= p <= ACTIVE_MAX:
+        return False, "Active Power out of range"
+    if not REACTIVE_MIN <= q <= REACTIVE_MAX:
+        return False, "Reactive Power out of range"
+    if not SOC_MIN <= s <= SOC_MAX:
+        return False, "SOC out of range"
+    return True, ""
+
+def insert_row(swg, p, q, s):
+    snapshot_state()
+    st.session_state[f"{swg}_data"] = pd.concat(
+        [
+            st.session_state[f"{swg}_data"],
+            pd.DataFrame([{
+                f"{swg}_DateTime": datetime.now(tz=LOCAL_TZ),
+                "Active Power (MW)": p,
+                "Reactive Power (Mvar)": q,
+                "SOC (%)": s,
+            }])
+        ],
+        ignore_index=True
+    )
+
 for i, swg in enumerate(SWG_LIST):
     with cols[i]:
-        label = swg.replace("SWG", "SWG-")
-        st.markdown(f'<div class="swg-title">{label}</div>', unsafe_allow_html=True)
+        st.markdown(
+            f'<div class="swg-title">{swg.replace("SWG","SWG-")}</div>',
+            unsafe_allow_html=True
+        )
 
-        p = st.number_input(f"{label} Power (MW)", value=None, step=1.0, key=f"{swg}_p")
-        q = st.number_input(f"{label} Reactive Power (Mvar)", value=None, step=1.0, key=f"{swg}_q")
-        s = st.number_input(f"{label} SOC (%)", value=None, step=1.0, key=f"{swg}_s")
+        p = st.number_input("⚡ Active Power (MW)", value=None, step=1.0, key=f"{swg}_p")
+        q = st.number_input("🔌 Reactive Power (Mvar)", value=None, step=1.0, key=f"{swg}_q")
+        s = st.number_input("🔋 SOC (%)", value=None, step=1.0, key=f"{swg}_s")
 
-        if st.button(f"Add {label}", key=f"add_{swg}", use_container_width=True):
-            ok, msg = validate(p, q, s)
+        if st.button(f"➕ Add {swg.replace('SWG','SWG-')}", key=f"add_{swg}", use_container_width=True):
+            ok, msg = validate_inputs(p, q, s)
             if not ok:
                 st.error(msg)
             else:
                 insert_row(swg, p, q, s)
-                st.success("Added")
+                st.success("Data added")
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -253,25 +374,34 @@ st.markdown('</div>', unsafe_allow_html=True)
 # TABLE PREVIEW
 # =============================================================================
 
-def format_preview(df, swg):
+st.markdown(
+    """
+<div class="card">
+    <div class="section-title">📊 Live Table Preview</div>
+    <p style="color:#6b7280;font-size:13px;max-width:900px;">
+        Live operational measurements collected from each SWG unit.
+        This table updates in real time as data is added or edited and
+        represents the current state of the system. All modifications
+        are tracked and fully support Undo / Redo operations.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
+
+
+def format_preview(df):
     if df.empty:
         return df
     df = df.copy()
-    dt = pd.to_datetime(df[f"{swg}_DateTime"]).dt.tz_localize(None)
-    df[f"{swg}_DateTime"] = dt.dt.strftime(DISPLAY_DT_FORMAT)
-    df[f"{swg}_Power(MW)"] = df[f"{swg}_Power(MW)"].astype(str) + " MW"
-    df[f"{swg}_Reactive(Mvar)"] = df[f"{swg}_Reactive(Mvar)"].astype(str) + " Mvar"
-    df[f"{swg}_SOC(%)"] = df[f"{swg}_SOC(%)"].astype(str) + " %"
+    df.iloc[:, 0] = pd.to_datetime(df.iloc[:, 0]).dt.tz_localize(None).dt.strftime(DISPLAY_DT_FORMAT)
     return df
-
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Table Preview</div>', unsafe_allow_html=True)
 
 tcols = st.columns(3)
 for i, swg in enumerate(SWG_LIST):
     with tcols[i]:
         st.dataframe(
-            format_preview(st.session_state[f"{swg}_data"], swg),
+            format_preview(st.session_state[f"{swg}_data"]),
             use_container_width=True,
             hide_index=True
         )
@@ -283,24 +413,44 @@ st.markdown('</div>', unsafe_allow_html=True)
 # =============================================================================
 
 # =============================================================================
-# PART 2 — EDIT TABLE CONTROL PANEL (CLEAN STRUCTURE)
+# PART 2 — EDIT TABLE DATA (LIVE PREVIEW, SMOOTH, UNDO/REDO SAFE)
 # =============================================================================
 
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+st.markdown(
+    """
+<div class="card">
+    <div class="section-title">✏️ Edit Table Data</div>
+    <p style="color:#6b7280;font-size:13px;max-width:900px;">
+        Modify existing SWG records using structured edit modes such as
+        cell editing, row and column operations, and data restructuring.
+        All changes are applied in real time with full Undo / Redo support.
+        Tables can be locked to prevent accidental modifications.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
-# =============================================================================
-# CONTROL PANEL CARD
-# =============================================================================
 
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Table Controls</div>', unsafe_allow_html=True)
+# -----------------------------------------------------------------------------
+# STATE INIT
+# -----------------------------------------------------------------------------
 
-# ---------------- EDIT MODE ----------------
+if "edit_session_active" not in st.session_state:
+    st.session_state.edit_session_active = False
+
+if "edit_buffer" not in st.session_state:
+    st.session_state.edit_buffer = {}
+
+# -----------------------------------------------------------------------------
+# EDIT MODE + LOCK
+# -----------------------------------------------------------------------------
 
 edit_mode = st.selectbox(
-    "✏️ Edit Table",
+    "Edit Mode",
     [
         "Off",
+        "Edit Cells",
         "Insert Row",
         "Delete Row",
         "Insert Column",
@@ -310,65 +460,106 @@ edit_mode = st.selectbox(
         "Move Column Right",
         "Merge Columns",
     ],
-    index=0,
-    help="Choose an action to modify table structure or data"
+    index=0
 )
-
-# ---------------- LOCK TABLE (BELOW) ----------------
 
 st.session_state.table_locked = st.toggle(
-    "🔒 Lock Table (Lock all tables)",
-    value=st.session_state.get("table_locked", False),
-    help="When locked, all tables become read-only"
+    "🔒 Lock Table (lock all SWG tables)",
+    value=st.session_state.get("table_locked", False)
 )
 
-# ---------------- STATUS MESSAGE ----------------
-
 if st.session_state.table_locked:
-    st.error("Tables are locked. Editing is disabled.")
+    st.info("Tables are locked (read-only).")
 elif edit_mode != "Off":
-    st.success(f"Edit mode enabled: {edit_mode}")
-else:
-    st.info("Edit mode is off")
+    st.success(f"Edit mode: {edit_mode}")
 
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =============================================================================
+# -----------------------------------------------------------------------------
 # SELECT SWG
-# =============================================================================
-
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Select SWG</div>', unsafe_allow_html=True)
+# -----------------------------------------------------------------------------
 
 swg_target = st.selectbox(
-    "SWG",
+    "Select SWG",
     SWG_LIST,
     format_func=lambda x: x.replace("SWG", "SWG-")
 )
 
 df_key = f"{swg_target}_data"
+current_df = st.session_state[df_key]
+
+# -----------------------------------------------------------------------------
+# LIVE TABLE PREVIEW (ALWAYS VISIBLE)
+# -----------------------------------------------------------------------------
+
+st.markdown(
+    """
+<div class="card">
+    <div class="section-title">📊 Edit Live Table Preview</div>
+    <p style="color:#6b7280;font-size:13px;max-width:900px;">
+        View and modify SWG data in real time. Any edits made here are immediately
+        reflected in the system while remaining fully protected by Undo / Redo controls.
+        Use this preview to verify, adjust, and validate operational data before analysis
+        or export.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
+
+
+if st.session_state.table_locked:
+    st.dataframe(current_df, use_container_width=True)
+else:
+    st.dataframe(current_df, use_container_width=True)
+
+# -----------------------------------------------------------------------------
+# EDIT CELLS MODE (LIVE BUFFER + APPLY / CANCEL)
+# -----------------------------------------------------------------------------
+
+if edit_mode == "Edit Cells" and not st.session_state.table_locked:
+
+    # Start edit session ONCE
+    if not st.session_state.edit_session_active:
+        snapshot_state()  # save undo snapshot
+        st.session_state.edit_session_active = True
+        st.session_state.edit_buffer[swg_target] = current_df.copy(deep=True)
+
+    st.markdown("### ✍️ Cell Editor")
+
+    edited_df = st.data_editor(
+        st.session_state.edit_buffer[swg_target],
+        use_container_width=True,
+        num_rows="dynamic",
+        key=f"{swg_target}_editor"
+    )
+
+    # Buttons side by side
+    btn_apply, btn_cancel = st.columns(2)
+
+    with btn_apply:
+        if st.button("💾 Apply Changes", use_container_width=True):
+            st.session_state[df_key] = edited_df
+            st.session_state.edit_session_active = False
+            st.session_state.edit_buffer.pop(swg_target, None)
+            st.success("Changes applied (Undo supported)")
+
+    with btn_cancel:
+        if st.button("❌ Cancel Changes", use_container_width=True):
+            undo_action()
+            st.session_state.edit_session_active = False
+            st.session_state.edit_buffer.pop(swg_target, None)
+            st.warning("Changes canceled")
+
+# -----------------------------------------------------------------------------
+# STRUCTURAL EDIT ACTIONS (ROW / COLUMN)
+# -----------------------------------------------------------------------------
+
 df = st.session_state[df_key]
 
-# =============================================================================
-# SNAPSHOT (UNDO SUPPORT)
-# =============================================================================
-
-def snapshot_state():
-    st.session_state.history.append({
-        swg: st.session_state[f"{swg}_data"].copy(deep=True)
-        for swg in SWG_LIST
-    })
-    st.session_state.redo_stack.clear()
-
-# =============================================================================
-# EDIT ACTIONS
-# =============================================================================
-
 if df.empty:
-    st.warning("No data available for this SWG.")
+    st.warning("No data available.")
 else:
 
-    # ---------------- INSERT ROW ----------------
+    # INSERT ROW
     if edit_mode == "Insert Row" and not st.session_state.table_locked:
         if st.button("➕ Insert Empty Row"):
             snapshot_state()
@@ -378,10 +569,10 @@ else:
             )
             st.success("Row inserted")
 
-    # ---------------- DELETE ROW ----------------
+    # DELETE ROW
     elif edit_mode == "Delete Row" and not st.session_state.table_locked:
         row_idx = st.number_input(
-            "Row index",
+            "Row index to delete",
             min_value=0,
             max_value=len(df) - 1,
             step=1
@@ -391,7 +582,7 @@ else:
             st.session_state[df_key] = df.drop(index=row_idx).reset_index(drop=True)
             st.success("Row deleted")
 
-    # ---------------- INSERT COLUMN ----------------
+    # INSERT COLUMN
     elif edit_mode == "Insert Column" and not st.session_state.table_locked:
         new_col = st.text_input("New column name")
         if st.button("➕ Insert Column") and new_col:
@@ -400,24 +591,24 @@ else:
             st.session_state[df_key] = df
             st.success("Column inserted")
 
-    # ---------------- DELETE COLUMN ----------------
+    # DELETE COLUMN
     elif edit_mode == "Delete Column" and not st.session_state.table_locked:
-        col = st.selectbox("Column", df.columns)
+        col = st.selectbox("Column to delete", df.columns)
         if st.button("🗑 Delete Column"):
             snapshot_state()
             st.session_state[df_key] = df.drop(columns=[col])
             st.success("Column deleted")
 
-    # ---------------- RENAME COLUMN ----------------
+    # RENAME COLUMN
     elif edit_mode == "Rename Column" and not st.session_state.table_locked:
-        col = st.selectbox("Column", df.columns)
+        col = st.selectbox("Column to rename", df.columns)
         new_name = st.text_input("New column name")
         if st.button("✏ Rename Column") and new_name:
             snapshot_state()
             st.session_state[df_key] = df.rename(columns={col: new_name})
             st.success("Column renamed")
 
-    # ---------------- MOVE COLUMN LEFT ----------------
+    # MOVE COLUMN LEFT
     elif edit_mode == "Move Column Left" and not st.session_state.table_locked:
         col = st.selectbox("Column", df.columns)
         if st.button("⬅ Move Left"):
@@ -429,7 +620,7 @@ else:
                 st.session_state[df_key] = df[cols]
                 st.success("Column moved left")
 
-    # ---------------- MOVE COLUMN RIGHT ----------------
+    # MOVE COLUMN RIGHT
     elif edit_mode == "Move Column Right" and not st.session_state.table_locked:
         col = st.selectbox("Column", df.columns)
         if st.button("➡ Move Right"):
@@ -441,7 +632,7 @@ else:
                 st.session_state[df_key] = df[cols]
                 st.success("Column moved right")
 
-    # ---------------- MERGE COLUMNS ----------------
+    # MERGE COLUMNS
     elif edit_mode == "Merge Columns" and not st.session_state.table_locked:
         cols_to_merge = st.multiselect(
             "Select exactly 2 columns",
@@ -449,6 +640,7 @@ else:
             max_selections=2
         )
         new_col = st.text_input("Merged column name")
+
         if st.button("🔗 Merge Columns") and len(cols_to_merge) == 2 and new_col:
             snapshot_state()
             df[new_col] = (
@@ -459,1047 +651,554 @@ else:
             st.session_state[df_key] = df.drop(columns=cols_to_merge)
             st.success("Columns merged")
 
-# =============================================================================
-# EDITABLE TABLE PREVIEW
-# =============================================================================
-
-st.markdown("### Table Preview")
-
-edited_df = st.data_editor(
-    st.session_state[df_key],
-    disabled=st.session_state.table_locked,
-    use_container_width=True,
-    num_rows="dynamic",
-    key=f"{swg_target}_editor"
-)
-
-if not edited_df.equals(st.session_state[df_key]):
-    snapshot_state()
-    st.session_state[df_key] = edited_df
-    st.success("Table updated")
-
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # =============================================================================
 # END PART 2
 # =============================================================================
 
 # =============================================================================
-# PART 3 — FULL STATISTICS ANALYSIS (LARGE NUMBERS UI)
+# PART 3 — ADVANCED STATISTICAL ANALYSIS (FIXED VERSION)
 # =============================================================================
 
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
+import numpy as np
+import altair as alt
+from io import BytesIO
 
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Statistics Analysis</div>', unsafe_allow_html=True)
+alt.data_transformers.disable_max_rows()
 
-# =============================================================================
-# HELPER FUNCTIONS
-# =============================================================================
+# -----------------------------------------------------------------------------
+# UI HEADER
+# -----------------------------------------------------------------------------
 
-def to_numeric(series: pd.Series) -> pd.Series:
-    return pd.to_numeric(series, errors="coerce")
+st.markdown(
+    """
+<div class="card">
+    <div class="section-title">📊 Advanced Statistical Analysis</div>
+    <p style="color:#6b7280;font-size:13px;">
+        Detailed distribution, box plots, outliers, and summary statistics per SWG.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
-def stats_block(series: pd.Series) -> dict:
-    s = to_numeric(series)
-    return {
-        "Count": int(s.count()),
-        "Missing": int(s.isna().sum()),
-        "Min": s.min(),
-        "Max": s.max(),
-        "Mean": s.mean(),
-        "Std": s.std(),
-    }
+show_stats = st.toggle("Show Advanced Statistical Analysis", value=False)
 
-# =============================================================================
-# METRIC CARD — LARGE NUMBER STYLE
-# =============================================================================
+if not show_stats:
+    st.info("Advanced Statistical Analysis is hidden.")
+else:
 
-def stat_card(label, value, unit, color):
-    display = "—" if pd.isna(value) else f"{value:.2f}"
-    st.markdown(
-        f"""
-        <div style="
-            background:white;
-            border-radius:16px;
-            padding:16px;
-            box-shadow:0 6px 18px rgba(0,0,0,0.08);
-            margin-bottom:12px;
-            text-align:center;
-        ">
-            <div style="
-                font-size:13px;
-                color:#64748b;
-                margin-bottom:6px;
-            ">
-                {label}
-            </div>
-            <div style="
-                font-size:34px;
-                font-weight:900;
-                color:{color};
-                line-height:1.2;
-            ">
-                {display}
-                <span style="font-size:16px;font-weight:600;"> {unit}</span>
-            </div>
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
+    # =============================================================================
+    # HELPER FUNCTIONS
+    # =============================================================================
 
-# =============================================================================
-# STATISTICS PER SWG
-# =============================================================================
+    def descriptive_stats(series: pd.Series):
+        s = pd.to_numeric(series, errors="coerce")
+        return {
+            "Count": s.count(),
+            "Missing": s.isna().sum(),
+            "Mean": s.mean(),
+            "Median": s.median(),
+            "Std Dev": s.std(),
+            "Min": s.min(),
+            "Max": s.max(),
+            "Range": s.max() - s.min(),
+            "IQR": s.quantile(0.75) - s.quantile(0.25),
+            "Variance": s.var(),
+        }
 
-cols = st.columns(3)
+    def detect_outliers(series: pd.Series):
+        s = pd.to_numeric(series, errors="coerce").dropna()
+        if s.empty:
+            return []
+        q1, q3 = s.quantile([0.25, 0.75])
+        iqr = q3 - q1
+        lower = q1 - 1.5 * iqr
+        upper = q3 + 1.5 * iqr
+        return s[(s < lower) | (s > upper)]
 
-for idx, swg in enumerate(SWG_LIST):
-    df = st.session_state[f"{swg}_data"]
+    def boxplot(df, col, title):
+        tmp = df[[col]].dropna()
+        return (
+            alt.Chart(tmp)
+            .mark_boxplot(size=60, extent="min-max")
+            .encode(y=alt.Y(f"{col}:Q", title=col))
+            .properties(title=title, height=220)
+        )
 
-    with cols[idx]:
-        st.markdown(f"### {swg.replace('SWG','SWG-')}")
+    # =============================================================================
+    # ANALYSIS CONTENT
+    # =============================================================================
+
+    METRICS = [
+        "Active Power (MW)",
+        "Reactive Power (Mvar)",
+        "SOC (%)"
+    ]
+
+    excel_buffer = BytesIO()
+    writer = pd.ExcelWriter(excel_buffer, engine="xlsxwriter")
+
+    for swg in SWG_LIST:
+        df = st.session_state[f"{swg}_data"]
+        label = swg.replace("SWG", "SWG-")
+
+        st.markdown(f"### 🔋 {label}")
 
         if df.empty:
-            st.warning("No data available")
+            st.warning("No data available.")
             continue
 
-        p_stats = stats_block(df[f"{swg}_Power(MW)"])
-        q_stats = stats_block(df[f"{swg}_Reactive(Mvar)"])
-        s_stats = stats_block(df[f"{swg}_SOC(%)"])
-
-        # ---------------- POWER ----------------
-        st.markdown("#### 🔴 Power (MW)")
-        stat_card("Mean", p_stats["Mean"], "MW", "#dc2626")
-        stat_card("Min", p_stats["Min"], "MW", "#dc2626")
-        stat_card("Max", p_stats["Max"], "MW", "#dc2626")
-        stat_card("Std Dev", p_stats["Std"], "MW", "#dc2626")
-        stat_card("Count", p_stats["Count"], "", "#dc2626")
-        stat_card("Missing", p_stats["Missing"], "", "#dc2626")
-
-        # ---------------- REACTIVE ----------------
-        st.markdown("#### 🟢 Reactive Power (Mvar)")
-        stat_card("Mean", q_stats["Mean"], "Mvar", "#16a34a")
-        stat_card("Min", q_stats["Min"], "Mvar", "#16a34a")
-        stat_card("Max", q_stats["Max"], "Mvar", "#16a34a")
-        stat_card("Std Dev", q_stats["Std"], "Mvar", "#16a34a")
-        stat_card("Count", q_stats["Count"], "", "#16a34a")
-        stat_card("Missing", q_stats["Missing"], "", "#16a34a")
-
-        # ---------------- SOC ----------------
-        st.markdown("#### 🟠 SOC (%)")
-        stat_card("Mean", s_stats["Mean"], "%", "#f97316")
-        stat_card("Min", s_stats["Min"], "%", "#f97316")
-        stat_card("Max", s_stats["Max"], "%", "#f97316")
-        stat_card("Std Dev", s_stats["Std"], "%", "#f97316")
-        stat_card("Count", s_stats["Count"], "", "#f97316")
-        stat_card("Missing", s_stats["Missing"], "", "#f97316")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# SUMMARY TABLE (OPTIONAL, READABLE)
-# =============================================================================
-
-rows = []
-
-for swg in SWG_LIST:
-    df = st.session_state[f"{swg}_data"]
-    if df.empty:
-        continue
-
-    p = stats_block(df[f"{swg}_Power(MW)"])
-    q = stats_block(df[f"{swg}_Reactive(Mvar)"])
-    s = stats_block(df[f"{swg}_SOC(%)"])
-
-    rows.append({
-        "SWG": swg.replace("SWG", "SWG-"),
-        "P Mean (MW)": round(p["Mean"], 2),
-        "P Min": round(p["Min"], 2),
-        "P Max": round(p["Max"], 2),
-        "P SD": round(p["Std"], 2),
-        "Q Mean (Mvar)": round(q["Mean"], 2),
-        "SOC Mean (%)": round(s["Mean"], 2),
-        "Count": p["Count"],
-        "Missing": p["Missing"],
-    })
-
-if rows:
-    st.markdown("### Statistics Summary Table")
-    st.dataframe(pd.DataFrame(rows), use_container_width=True)
-
-# =============================================================================
-# END PART 3
-# =============================================================================
-
-# =============================================================================
-# PART 4A — DATA VISUALIZATION FOUNDATION
-# =============================================================================
-
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Data Visualization</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# GLOBAL COLOR SCHEME (ENERGY STANDARD)
-# =============================================================================
-
-COLOR_MAP = {
-    "power": "#dc2626",      # red
-    "reactive": "#16a34a",   # green
-    "soc": "#f97316",        # orange
-}
-
-# =============================================================================
-# VISUALIZATION SETTINGS (USER CONTROLS)
-# =============================================================================
-
-st.markdown("### Visualization Controls")
-
-control_col1, control_col2, control_col3 = st.columns(3)
-
-# ---------------- SELECT SWG ----------------
-
-with control_col1:
-    selected_swgs = st.multiselect(
-        "Select SWG",
-        options=SWG_LIST,
-        default=SWG_LIST,
-        format_func=lambda x: x.replace("SWG", "SWG-"),
-        help="Choose which SWG to display"
-    )
-
-# ---------------- SELECT METRICS ----------------
-
-with control_col2:
-    selected_metrics = st.multiselect(
-        "Select Metrics",
-        options=["Power (MW)", "Reactive Power (Mvar)", "SOC (%)"],
-        default=["Power (MW)", "Reactive Power (Mvar)", "SOC (%)"],
-        help="Choose metrics to visualize"
-    )
-
-# ---------------- TIME FILTER ----------------
-
-with control_col3:
-    time_window = st.selectbox(
-        "Time Window",
-        ["All", "Last 1 hour", "Last 6 hours", "Last 24 hours"],
-        help="Filter data by time range"
-    )
-
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-# =============================================================================
-# DATA PREPARATION HELPERS
-# =============================================================================
-
-def apply_time_filter(df: pd.DataFrame, swg: str, window: str) -> pd.DataFrame:
-    """
-    Filter dataframe based on selected time window.
-    """
-    if df.empty:
-        return df
-
-    time_col = f"{swg}_DateTime"
-    df = df.copy()
-    df[time_col] = pd.to_datetime(df[time_col], errors="coerce")
-
-    if window == "All":
-        return df
-
-    now = pd.Timestamp.now(tz=LOCAL_TZ)
-
-    if window == "Last 1 hour":
-        cutoff = now - pd.Timedelta(hours=1)
-    elif window == "Last 6 hours":
-        cutoff = now - pd.Timedelta(hours=6)
-    elif window == "Last 24 hours":
-        cutoff = now - pd.Timedelta(hours=24)
-    else:
-        return df
-
-    return df[df[time_col] >= cutoff]
-
-def prepare_metric_series(
-    df: pd.DataFrame,
-    swg: str,
-    metric: str
-) -> pd.DataFrame:
-    """
-    Prepare clean time-series dataframe for a given metric.
-    """
-    metric_map = {
-        "Power (MW)": f"{swg}_Power(MW)",
-        "Reactive Power (Mvar)": f"{swg}_Reactive(Mvar)",
-        "SOC (%)": f"{swg}_SOC(%)",
-    }
-
-    time_col = f"{swg}_DateTime"
-    value_col = metric_map[metric]
-
-    if df.empty or value_col not in df.columns:
-        return pd.DataFrame()
-
-    ts = df[[time_col, value_col]].copy()
-    ts[time_col] = pd.to_datetime(ts[time_col], errors="coerce")
-    ts[value_col] = pd.to_numeric(ts[value_col], errors="coerce")
-
-    ts = ts.dropna()
-    return ts.set_index(time_col)
-
-# =============================================================================
-# DATA AVAILABILITY CHECK
-# =============================================================================
-
-if not selected_swgs:
-    st.warning("Please select at least one SWG to visualize.")
-    st.markdown('</div>', unsafe_allow_html=True)
-else:
-    empty_count = 0
-    for swg in selected_swgs:
-        if st.session_state[f"{swg}_data"].empty:
-            empty_count += 1
-
-    if empty_count == len(selected_swgs):
-        st.warning("No data available for selected SWGs.")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# END PART 4A
-# =============================================================================
-
-# =============================================================================
-# PART 4B — CORE ENERGY DASHBOARD CHARTS
-# =============================================================================
-
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-# =============================================================================
-# CHART RENDERING PER SWG
-# =============================================================================
-
-for swg in selected_swgs:
-
-    raw_df = st.session_state[f"{swg}_data"]
-
-    # Apply time window filter (from Part 4A)
-    df = apply_time_filter(raw_df, swg, time_window)
-
-    st.markdown(f"### {swg.replace('SWG', 'SWG-')} Energy Trends")
-
-    if df.empty:
-        st.warning("No data available after applying time filter.")
-        continue
-
-    # Determine how many columns to render
-    metric_columns = []
-
-    if "Power (MW)" in selected_metrics:
-        metric_columns.append("Power (MW)")
-    if "Reactive Power (Mvar)" in selected_metrics:
-        metric_columns.append("Reactive Power (Mvar)")
-    if "SOC (%)" in selected_metrics:
-        metric_columns.append("SOC (%)")
-
-    if not metric_columns:
-        st.info("No metrics selected.")
-        continue
-
-    chart_cols = st.columns(len(metric_columns))
-
-    for idx, metric in enumerate(metric_columns):
-
-        with chart_cols[idx]:
-
-            # ---------------- POWER ----------------
-            if metric == "Power (MW)":
-                st.markdown("🔴 **Power (MW)**")
-                ts = prepare_metric_series(df, swg, metric)
-
-                if not ts.empty:
-                    st.line_chart(
-                        ts,
-                        height=260,
-                        use_container_width=True
-                    )
-                else:
-                    st.info("No valid Power data")
-
-            # ---------------- REACTIVE ----------------
-            elif metric == "Reactive Power (Mvar)":
-                st.markdown("🟢 **Reactive Power (Mvar)**")
-                ts = prepare_metric_series(df, swg, metric)
-
-                if not ts.empty:
-                    st.line_chart(
-                        ts,
-                        height=260,
-                        use_container_width=True
-                    )
-                else:
-                    st.info("No valid Reactive Power data")
-
-            # ---------------- SOC ----------------
-            elif metric == "SOC (%)":
-                st.markdown("🟠 **SOC (%)**")
-                ts = prepare_metric_series(df, swg, metric)
-
-                if not ts.empty:
-                    st.line_chart(
-                        ts,
-                        height=260,
-                        use_container_width=True
-                    )
-                else:
-                    st.info("No valid SOC data")
-
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-# =============================================================================
-# END PART 4B
-# =============================================================================
-
-# =============================================================================
-# PART 4C — ADVANCED ENERGY DASHBOARD INSIGHTS
-# =============================================================================
-
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Advanced Energy Insights</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# THRESHOLD CONFIGURATION (INDUSTRY DEFAULTS)
-# =============================================================================
-
-POWER_OVERLOAD_LIMIT = 120.0   # MW
-SOC_LOW_LIMIT = 20.0           # %
-
-# =============================================================================
-# KPI CARD HELPER
-# =============================================================================
-
-def kpi_card(title, value, unit, color, subtitle=None):
-    st.markdown(
-        f"""
-        <div style="
-            background:white;
-            border-radius:16px;
-            padding:18px;
-            box-shadow:0 6px 18px rgba(0,0,0,0.08);
-            margin-bottom:14px;
-        ">
-            <div style="font-size:14px;color:#64748b;">
-                {title}
-            </div>
-            <div style="
-                font-size:36px;
-                font-weight:900;
-                color:{color};
-                line-height:1.2;
-            ">
-                {value}
-                <span style="font-size:16px;"> {unit}</span>
-            </div>
-            {f"<div style='font-size:12px;color:#64748b;'>{subtitle}</div>" if subtitle else ""}
-        </div>
-        """,
-        unsafe_allow_html=True
+        # ---------------------------------------------------------------------
+        # DESCRIPTIVE STATISTICS TABLE
+        # ---------------------------------------------------------------------
+
+        stats_df = pd.DataFrame({
+            metric: descriptive_stats(df[metric]) for metric in METRICS
+        })
+
+        st.dataframe(
+            stats_df.style.format("{:.3f}"),
+            use_container_width=True
+        )
+
+        stats_df.to_excel(writer, sheet_name=f"{label}_Stats")
+
+        # ---------------------------------------------------------------------
+        # BOX PLOTS
+        # ---------------------------------------------------------------------
+
+        st.markdown("#### 📦 Distribution (Box Plots)")
+        c1, c2, c3 = st.columns(3)
+
+        with c1:
+            st.altair_chart(boxplot(df, METRICS[0], "Active Power"), use_container_width=True)
+        with c2:
+            st.altair_chart(boxplot(df, METRICS[1], "Reactive Power"), use_container_width=True)
+        with c3:
+            st.altair_chart(boxplot(df, METRICS[2], "SOC (%)"), use_container_width=True)
+
+        # ---------------------------------------------------------------------
+        # OUTLIERS
+        # ---------------------------------------------------------------------
+
+        st.markdown("#### 🚨 Outlier Detection (IQR Method)")
+        outlier_rows = []
+
+        for metric in METRICS:
+            for value in detect_outliers(df[metric]):
+                outlier_rows.append({
+                    "Metric": metric,
+                    "Outlier Value": value
+                })
+
+        if outlier_rows:
+            st.dataframe(pd.DataFrame(outlier_rows), use_container_width=True)
+        else:
+            st.success("No outliers detected.")
+
+        st.markdown("---")
+
+    writer.close()
+
+    # -------------------------------------------------------------------------
+    # EXPORT
+    # -------------------------------------------------------------------------
+
+    st.download_button(
+        "📄 Download Statistics (Excel)",
+        data=excel_buffer.getvalue(),
+        file_name="SWG_Advanced_Statistics.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
 
 # =============================================================================
-# AGGREGATE LATEST VALUES
-# =============================================================================
-
-latest_rows = []
-
-for swg in selected_swgs:
-    df = apply_time_filter(st.session_state[f"{swg}_data"], swg, time_window)
-
-    if df.empty:
-        continue
-
-    df_sorted = df.sort_values(by=f"{swg}_DateTime")
-
-    latest_rows.append({
-        "SWG": swg.replace("SWG", "SWG-"),
-        "Power": pd.to_numeric(df_sorted[f"{swg}_Power(MW)"], errors="coerce").iloc[-1],
-        "Reactive": pd.to_numeric(df_sorted[f"{swg}_Reactive(Mvar)"], errors="coerce").iloc[-1],
-        "SOC": pd.to_numeric(df_sorted[f"{swg}_SOC(%)"], errors="coerce").iloc[-1],
-        "Last Time": df_sorted[f"{swg}_DateTime"].iloc[-1],
-        "Max Power": pd.to_numeric(df_sorted[f"{swg}_Power(MW)"], errors="coerce").max(),
-        "Min SOC": pd.to_numeric(df_sorted[f"{swg}_SOC(%)"], errors="coerce").min(),
-    })
-
-latest_df = pd.DataFrame(latest_rows)
-
-if latest_df.empty:
-    st.warning("No data available for advanced insights.")
-    st.markdown('</div>', unsafe_allow_html=True)
-else:
-
-    # =============================================================================
-    # KPI SUMMARY ROW
-    # =============================================================================
-
-    st.markdown("### Key Performance Indicators")
-
-    kpi_cols = st.columns(len(latest_df))
-
-    for idx, row in latest_df.iterrows():
-        with kpi_cols[idx]:
-            kpi_card(
-                title=f"{row['SWG']} Latest Power",
-                value=f"{row['Power']:.2f}",
-                unit="MW",
-                color="#dc2626",
-                subtitle=f"Last update: {row['Last Time']}"
-            )
-
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-    # =============================================================================
-    # THRESHOLD ALERTS
-    # =============================================================================
-
-    st.markdown("### Alerts & Status")
-
-    for _, row in latest_df.iterrows():
-        if row["Power"] > POWER_OVERLOAD_LIMIT:
-            st.error(f"⚠️ {row['SWG']} Power overload: {row['Power']:.2f} MW")
-
-        if row["SOC"] < SOC_LOW_LIMIT:
-            st.warning(f"🟠 {row['SWG']} Low SOC: {row['SOC']:.2f} %")
-
-    if (
-        (latest_df["Power"] <= POWER_OVERLOAD_LIMIT).all()
-        and (latest_df["SOC"] >= SOC_LOW_LIMIT).all()
-    ):
-        st.success("✅ All systems operating within safe limits.")
-
-    st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-    # =============================================================================
-    # AGGREGATED COMPARISON TABLE
-    # =============================================================================
-
-    st.markdown("### Aggregated Comparison (Latest Values)")
-
-    comparison_df = latest_df[
-        ["SWG", "Power", "Reactive", "SOC", "Max Power", "Min SOC"]
-    ].copy()
-
-    comparison_df.rename(
-        columns={
-            "Power": "Latest Power (MW)",
-            "Reactive": "Latest Reactive (Mvar)",
-            "SOC": "Latest SOC (%)",
-            "Max Power": "Max Power (MW)",
-            "Min SOC": "Min SOC (%)",
-        },
-        inplace=True
-    )
-
-    st.dataframe(comparison_df, use_container_width=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# END PART 4C
+# END STATISTICS SECTION
 # =============================================================================
 
 # =============================================================================
-# PART 4D — STEP CHART CONTROLS & DATA ENGINE (NO PLOTTING)
-# =============================================================================
-
-import pandas as pd
-
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Step Chart — Advanced Controls</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# CONTROL PANEL
-# =============================================================================
-
-c1, c2, c3 = st.columns(3)
-
-with c1:
-    metric_mode = st.selectbox(
-        "Metric Mode",
-        ["Single Metric", "All Metrics (P + Q + SOC)"]
-    )
-
-with c2:
-    selected_metric = st.selectbox(
-        "Metric",
-        ["Power (MW)", "Reactive Power (Mvar)", "SOC (%)"],
-        disabled=(metric_mode != "Single Metric")
-    )
-
-with c3:
-    step_mode = st.selectbox(
-        "Step Mode",
-        ["before", "after"]
-    )
-
-# -----------------------------------------------------------------------------
-# POINT CONTROLS (BELOW METRIC)
-# -----------------------------------------------------------------------------
-
-show_points = st.toggle("Show Points", value=True)
-
-point_size = st.slider(
-    "Point Size",
-    min_value=20,
-    max_value=120,
-    value=60,
-    disabled=not show_points
-)
-
-# -----------------------------------------------------------------------------
-# LINE STYLE CONTROLS
-# -----------------------------------------------------------------------------
-
-line_width = st.slider(
-    "Line Width",
-    min_value=1,
-    max_value=6,
-    value=3
-)
-
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-# =============================================================================
-# AXIS RANGE CONTROLS (OPTIONAL)
-# =============================================================================
-
-axis_c1, axis_c2, axis_c3 = st.columns(3)
-
-with axis_c1:
-    custom_power_axis = st.toggle("Custom Power Axis")
-    power_range = st.slider(
-        "Power Range (MW)",
-        -200, 200,
-        (-150, 150),
-        disabled=not custom_power_axis
-    )
-
-with axis_c2:
-    custom_reactive_axis = st.toggle("Custom Reactive Axis")
-    reactive_range = st.slider(
-        "Reactive Range (Mvar)",
-        -200, 200,
-        (-150, 150),
-        disabled=not custom_reactive_axis
-    )
-
-with axis_c3:
-    custom_soc_axis = st.toggle("Custom SOC Axis")
-    soc_range = st.slider(
-        "SOC Range (%)",
-        0, 100,
-        (0, 100),
-        disabled=not custom_soc_axis
-    )
-
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-
-# =============================================================================
-# SWG VISIBILITY CONTROL
-# =============================================================================
-
-visible_swgs = st.multiselect(
-    "Visible SWGs",
-    selected_swgs,
-    default=selected_swgs,
-    format_func=lambda x: x.replace("SWG", "SWG-")
-)
-
-# =============================================================================
-# DATA COLLECTION ENGINE
-# =============================================================================
-
-def collect_metric_data(metric_label, suffix):
-    rows = []
-    for swg in visible_swgs:
-        df_raw = st.session_state[f"{swg}_data"]
-        df = apply_time_filter(df_raw, swg, time_window)
-
-        if df.empty:
-            continue
-
-        tcol = f"{swg}_DateTime"
-        vcol = f"{swg}{suffix}"
-
-        if vcol not in df.columns:
-            continue
-
-        tmp = df[[tcol, vcol]].copy()
-        tmp[tcol] = pd.to_datetime(tmp[tcol], errors="coerce")
-        tmp[vcol] = pd.to_numeric(tmp[vcol], errors="coerce")
-        tmp = tmp.dropna()
-
-        if tmp.empty:
-            continue
-
-        tmp["Time"] = tmp[tcol]
-        tmp["Value"] = tmp[vcol]
-        tmp["Metric"] = metric_label
-        tmp["SWG"] = swg.replace("SWG", "SWG-")
-
-        rows.append(tmp[["Time", "Value", "Metric", "SWG"]])
-
-    return pd.concat(rows, ignore_index=True) if rows else pd.DataFrame()
-
-# =============================================================================
-# BUILD UNIFIED DATAFRAME FOR PLOTTING
-# =============================================================================
-
-data_frames = []
-
-if metric_mode == "Single Metric":
-    suffix_map = {
-        "Power (MW)": "_Power(MW)",
-        "Reactive Power (Mvar)": "_Reactive(Mvar)",
-        "SOC (%)": "_SOC(%)",
-    }
-    data_frames.append(
-        collect_metric_data(selected_metric, suffix_map[selected_metric])
-    )
-
-else:
-    data_frames.append(collect_metric_data("Power (MW)", "_Power(MW)"))
-    data_frames.append(collect_metric_data("Reactive Power (Mvar)", "_Reactive(Mvar)"))
-    data_frames.append(collect_metric_data("SOC (%)", "_SOC(%)"))
-
-step_plot_df = pd.concat(data_frames, ignore_index=True) if data_frames else pd.DataFrame()
-
-# =============================================================================
-# DATA VALIDATION FLAG (USED BY PART 4E)
-# =============================================================================
-
-step_chart_ready = not step_plot_df.empty
-
-if not step_chart_ready:
-    st.warning("No data available for step chart with current settings.")
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-# =============================================================================
-# END PART 4D
-# =============================================================================
-
-# =============================================================================
-# PART 4E — STEP LINE RENDERING ENGINE (MULTI Y-AXIS, FIXED)
+# ADVANCED DATA VISUALIZATION (FINAL – ROLLING FIX + COMPACT)
 # =============================================================================
 
 import altair as alt
 
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">SWG Step Line Comparison</div>', unsafe_allow_html=True)
+alt.data_transformers.disable_max_rows()
 
-# =============================================================================
-# GUARD
-# =============================================================================
+# -----------------------------------------------------------------------------
+# HEADER
+# -----------------------------------------------------------------------------
 
-if not step_chart_ready:
-    st.info("Adjust settings above to display the step comparison chart.")
-    st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+<div class="card">
+    <div class="section-title">📈 Advanced Data Visualization</div>
+    <p style="color:#6b7280;font-size:13px;">
+        Compact interactive charts for trend analysis and SWG comparison.
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
+show_viz = st.toggle("Show Advanced Data Visualization", value=False)
+
+if not show_viz:
+    st.info("Advanced Data Visualization is hidden.")
 else:
-    # =============================================================================
-    # BASE CHART
-    # =============================================================================
-
-    base = alt.Chart(step_plot_df).encode(
-        x=alt.X(
-            "Time:T",
-            title="Time",
-            axis=alt.Axis(format="%H:%M:%S", labelAngle=-30)
-        ),
-        color=alt.Color(
-            "SWG:N",
-            legend=alt.Legend(title="SWG")
-        ),
-        tooltip=[
-            alt.Tooltip("SWG:N", title="SWG"),
-            alt.Tooltip("Metric:N", title="Metric"),
-            alt.Tooltip("Time:T", title="Time"),
-            alt.Tooltip("Value:Q", title="Value"),
-        ]
-    )
-
-    layers = []
 
     # =============================================================================
-    # POWER (LEFT AXIS)
+    # CONTROLS — ROW 1
     # =============================================================================
 
-    if "Power (MW)" in step_plot_df["Metric"].unique():
+    c1, c2, c3 = st.columns(3)
 
-        power_scale = (
-            alt.Scale(domain=list(power_range), zero=False)
-            if custom_power_axis
-            else alt.Scale(zero=False)
+    with c1:
+        metric = st.selectbox(
+            "Metric",
+            ["Active Power (MW)", "Reactive Power (Mvar)", "SOC (%)"]
         )
 
-        power_line = (
-            base.transform_filter(alt.datum.Metric == "Power (MW)")
-            .encode(
+    with c2:
+        chart_type = st.selectbox(
+            "Chart Type",
+            ["Line", "Step Line", "Area"]
+        )
+
+    with c3:
+        view_mode = st.selectbox(
+            "View Mode",
+            ["Per SWG", "Compare All SWG"]
+        )
+
+    # =============================================================================
+    # CONTROLS — ROW 2
+    # =============================================================================
+
+    c4, c5, c6 = st.columns(3)
+
+    with c4:
+        show_rolling = st.checkbox("Show Rolling Average")
+
+    with c5:
+        show_points = st.checkbox("Show Points", value=True)
+
+    with c6:
+        window = st.slider(
+            "Rolling Window",
+            2, 10, 3,
+            disabled=not show_rolling
+        )
+
+    # =============================================================================
+    # CONTROLS — VISUAL OPTIONS
+    # =============================================================================
+
+    c7, c8, c9 = st.columns(3)
+
+    with c7:
+        show_legend = st.checkbox("Show Legend", value=True)
+
+    with c8:
+        show_labels = st.checkbox("Show Value Labels")
+
+    with c9:
+        show_axis_labels = st.checkbox("Show Axis Labels", value=True)
+
+    # =============================================================================
+    # DATA PREPARATION
+    # =============================================================================
+
+    frames = []
+
+    for swg in SWG_LIST:
+        df = st.session_state[f"{swg}_data"]
+        if not df.empty:
+            tmp = df.copy()
+            tmp["DateTime"] = pd.to_datetime(tmp.iloc[:, 0], errors="coerce")
+            tmp["Value"] = pd.to_numeric(tmp[metric], errors="coerce")
+            tmp["SWG"] = swg.replace("SWG", "SWG-")
+            frames.append(tmp[["DateTime", "Value", "SWG"]])
+
+    if not frames:
+        st.warning("No data available for visualization.")
+    else:
+        viz_df = pd.concat(frames).dropna()
+
+        # =============================================================================
+        # SAFE ROLLING AVERAGE (DUPLICATE DATETIME FIX)
+        # =============================================================================
+
+        if show_rolling:
+            viz_df = (
+                viz_df
+                .sort_values(["SWG", "DateTime"])
+                .reset_index(drop=True)
+            )
+
+            viz_df["Rolling"] = (
+                viz_df
+                .groupby("SWG", group_keys=False)["Value"]
+                .apply(lambda s: s.rolling(window=window, min_periods=1).mean())
+            )
+
+        # =============================================================================
+        # CHART BUILDERS (ALTAR SAFE)
+        # =============================================================================
+
+        interpolate = "step-after" if chart_type == "Step Line" else "linear"
+
+        def build_chart(df, height):
+            if chart_type == "Area":
+                base = alt.Chart(df).mark_area(
+                    interpolate=interpolate,
+                    opacity=0.35
+                )
+            else:
+                base = alt.Chart(df).mark_line(
+                    interpolate=interpolate,
+                    strokeWidth=2,
+                    point=show_points
+                )
+
+            return base.encode(
+                x=alt.X(
+                    "DateTime:T",
+                    title="Date & Time" if show_axis_labels else None,
+                    axis=alt.Axis(
+                        format="%H:%M:%S",
+                        labelAngle=-30
+                    )
+                ),
                 y=alt.Y(
                     "Value:Q",
-                    title="Power (MW)",
-                    scale=power_scale,
-                    axis=alt.Axis(titleColor="#dc2626")
-                )
-            )
-            .mark_line(
-                interpolate=f"step-{step_mode}",
-                strokeWidth=line_width,
-                color="#dc2626"
-            )
-        )
+                    title=metric if show_axis_labels else None
+                ),
+                color=alt.Color(
+                    "SWG:N",
+                    legend=alt.Legend(title="SWG") if show_legend else None
+                ),
+                tooltip=[
+                    "SWG",
+                    alt.Tooltip("DateTime:T", title="DateTime"),
+                    alt.Tooltip("Value:Q", title=metric, format=".2f")
+                ]
+            ).properties(height=height)
 
-        layers.append(power_line)
-
-        if show_points:
-            layers.append(
-                power_line.mark_point(size=point_size, filled=True)
-            )
-
-    # =============================================================================
-    # REACTIVE POWER (RIGHT AXIS)
-    # =============================================================================
-
-    if "Reactive Power (Mvar)" in step_plot_df["Metric"].unique():
-
-        reactive_scale = (
-            alt.Scale(domain=list(reactive_range), zero=False)
-            if custom_reactive_axis
-            else alt.Scale(zero=False)
-        )
-
-        reactive_line = (
-            base.transform_filter(alt.datum.Metric == "Reactive Power (Mvar)")
-            .encode(
-                y=alt.Y(
-                    "Value:Q",
-                    title="Reactive Power (Mvar)",
-                    scale=reactive_scale,
-                    axis=alt.Axis(titleColor="#16a34a")
-                )
-            )
-            .mark_line(
-                interpolate=f"step-{step_mode}",
+        def rolling_chart(df):
+            return alt.Chart(df).mark_line(
                 strokeDash=[6, 4],
-                strokeWidth=line_width,
-                color="#16a34a"
-            )
-        )
-
-        layers.append(reactive_line)
-
-        if show_points:
-            layers.append(
-                reactive_line.mark_point(size=point_size, filled=True)
+                strokeWidth=1.5
+            ).encode(
+                x="DateTime:T",
+                y="Rolling:Q",
+                color="SWG:N"
             )
 
-    # =============================================================================
-    # SOC (RIGHT OFFSET AXIS)
-    # =============================================================================
-
-    if "SOC (%)" in step_plot_df["Metric"].unique():
-
-        soc_scale = (
-            alt.Scale(domain=list(soc_range), zero=False)
-            if custom_soc_axis
-            else alt.Scale(domain=[0, 100], zero=False)
-        )
-
-        soc_line = (
-            base.transform_filter(alt.datum.Metric == "SOC (%)")
-            .encode(
-                y=alt.Y(
-                    "Value:Q",
-                    title="SOC (%)",
-                    scale=soc_scale,
-                    axis=alt.Axis(titleColor="#f97316")
-                )
-            )
-            .mark_line(
-                interpolate=f"step-{step_mode}",
-                strokeDash=[2, 2],
-                strokeWidth=line_width,
-                color="#f97316"
-            )
-        )
-
-        layers.append(soc_line)
-
-        if show_points:
-            layers.append(
-                soc_line.mark_point(size=point_size, filled=True)
+        def value_labels(df):
+            return alt.Chart(df).mark_text(
+                dy=-8,
+                fontSize=10
+            ).encode(
+                x="DateTime:T",
+                y="Value:Q",
+                text=alt.Text("Value:Q", format=".1f"),
+                color="SWG:N"
             )
 
-    # =============================================================================
-    # FINAL CHART
-    # =============================================================================
+        # =============================================================================
+        # RENDER — COMPACT (NO SCROLL)
+        # =============================================================================
 
-    final_chart = (
-        alt.layer(*layers)
-        .resolve_scale(y="independent")
-        .properties(height=480)
-    )
+        if view_mode == "Compare All SWG":
+            st.markdown("### 🔀 Compare All SWGs")
 
-    st.altair_chart(final_chart, use_container_width=True)
+            chart = build_chart(viz_df, height=300)
 
-    st.caption("Step Line Comparison • Independent Y-Axes • EMS-grade Visualization")
+            if show_rolling:
+                chart += rolling_chart(viz_df)
 
-st.markdown('</div>', unsafe_allow_html=True)
+            if show_labels:
+                chart += value_labels(viz_df)
+
+            st.altair_chart(chart, use_container_width=True)
+
+        else:
+            st.markdown("### 🔍 Per-SWG Analysis")
+
+            cols = st.columns(len(viz_df["SWG"].unique()))
+
+            for col, swg in zip(cols, viz_df["SWG"].unique()):
+                with col:
+                    st.markdown(f"**{swg}**")
+                    sub = viz_df[viz_df["SWG"] == swg]
+
+                    chart = build_chart(sub, height=220)
+
+                    if show_rolling:
+                        chart += rolling_chart(sub)
+
+                    if show_labels:
+                        chart += value_labels(sub)
+
+                    st.altair_chart(chart, use_container_width=True)
 
 # =============================================================================
-# END PART 4E
+# END ADVANCED DATA VISUALIZATION
 # =============================================================================
 
 # =============================================================================
-# PART 5 — EXPORT DATA (CSV / XLSX / JSON)
+# PART — DOWNLOAD DATA (FINAL • TIMEZONE-SAFE • ERROR-PROOF)
 # =============================================================================
 
-import io
 import json
+import numpy as np
+from io import BytesIO
 
-st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
-st.markdown('<div class="card">', unsafe_allow_html=True)
-st.markdown('<div class="section-title">Export Data</div>', unsafe_allow_html=True)
+st.markdown(
+    """
+<div class="card">
+    <div class="section-title">⬇️ Download Data</div>
+    <p style="color:#6b7280;font-size:13px;">
+        Export SWG data in CSV, Excel, or JSON format (timezone-safe).
+    </p>
+</div>
+""",
+    unsafe_allow_html=True
+)
 
-# =============================================================================
-# HELPER — FORMAT DATETIME (HUMAN READABLE)
-# =============================================================================
+show_download = st.toggle("Show Download Options", value=True)
 
-def format_datetime(series):
-    return pd.to_datetime(series, errors="coerce").dt.strftime(
-        "%m/%d/%Y %I:%M:%S %p"
-    )
+if show_download:
 
-# =============================================================================
-# BUILD EXPORT DATAFRAME
-# =============================================================================
+    # -------------------------------------------------------------------------
+    # 1️⃣ ALIGN ALL SWG DATA BY ROW INDEX
+    # -------------------------------------------------------------------------
 
-export_frames = []
+    max_len = max(len(st.session_state[f"{swg}_data"]) for swg in SWG_LIST)
 
-for swg in SWG_LIST:
-    df = st.session_state[f"{swg}_data"]
+    aligned_frames = []
 
-    if df.empty:
-        continue
+    for swg in SWG_LIST:
+        df = st.session_state[f"{swg}_data"].copy()
 
-    df = df.copy()
+        # Ensure dataframe has correct shape
+        df = df.reset_index(drop=True)
+        df = df.reindex(range(max_len))
 
-    # Rename columns to export format
-    rename_map = {
-        f"{swg}_DateTime": f"{swg}_DateTime",
-        f"{swg}_Power(MW)": f"{swg}_Power(MW)",
-        f"{swg}_Reactive(Mvar)": f"{swg}_Reactive(Mvar)",
-        f"{swg}_SOC(%)": f"{swg}_SOC(%)",
-    }
+        # 🔥 HARD FIX: FORCE DateTime → STRING (REMOVE TZ COMPLETELY)
+        dt_col = df.columns[0]
+        df[dt_col] = (
+            pd.to_datetime(df[dt_col], errors="coerce")
+            .dt.tz_localize(None)     # ⬅ REMOVE TIMEZONE
+            .dt.strftime("%Y-%m-%d %H:%M:%S")
+        )
 
-    df = df[list(rename_map.keys())].rename(columns=rename_map)
+        # Rename columns EXACTLY as required
+        df.columns = [
+            f"{swg}_DateTime",
+            "Active Power (MW)",
+            "Reactive Power (Mvar)",
+            "SOC (%)",
+        ]
 
-    # Format datetime
-    df[f"{swg}_DateTime"] = format_datetime(df[f"{swg}_DateTime"])
+        aligned_frames.append(df)
 
-    export_frames.append(df.reset_index(drop=True))
+    # Combine into one dataframe
+    export_df = pd.concat(aligned_frames, axis=1)
 
-# =============================================================================
-# ALIGN ROW COUNTS (NO DATA LOSS)
-# =============================================================================
+    # -------------------------------------------------------------------------
+    # 2️⃣ FINAL SANITIZATION (EXCEL + JSON SAFE)
+    # -------------------------------------------------------------------------
 
-if not export_frames:
-    st.warning("No data available to export.")
-    st.markdown('</div>', unsafe_allow_html=True)
-else:
-    max_len = max(len(df) for df in export_frames)
+    def sanitize_value(v):
+        if pd.isna(v):
+            return ""
+        if isinstance(v, (pd.Timestamp, datetime)):
+            return v.strftime("%Y-%m-%d %H:%M:%S")
+        if isinstance(v, (np.integer, np.floating)):
+            return float(v)
+        return str(v)
 
-    for i, df in enumerate(export_frames):
-        if len(df) < max_len:
-            export_frames[i] = df.reindex(range(max_len))
+    export_df = export_df.applymap(sanitize_value)
 
-    export_df = pd.concat(export_frames, axis=1)
+    # -------------------------------------------------------------------------
+    # 3️⃣ CSV EXPORT
+    # -------------------------------------------------------------------------
 
-    st.success("Export data prepared successfully.")
+    csv_bytes = export_df.to_csv(index=False).encode("utf-8")
 
-    # =============================================================================
-    # CSV EXPORT (ALWAYS AVAILABLE)
-    # =============================================================================
+    # -------------------------------------------------------------------------
+    # 4️⃣ EXCEL EXPORT (100% SAFE)
+    # -------------------------------------------------------------------------
 
-    csv_buffer = io.StringIO()
-    export_df.to_csv(csv_buffer, index=False)
+    excel_buffer = BytesIO()
+    with pd.ExcelWriter(excel_buffer, engine="xlsxwriter") as writer:
+        export_df.to_excel(
+            writer,
+            sheet_name="SWG_Data",
+            index=False
+        )
 
-    # =============================================================================
-    # JSON EXPORT (ALWAYS AVAILABLE)
-    # =============================================================================
+    excel_bytes = excel_buffer.getvalue()
 
-    json_data = export_df.to_dict(orient="records")
-    json_buffer = json.dumps(json_data, indent=2)
+    # -------------------------------------------------------------------------
+    # 5️⃣ JSON EXPORT (ABSOLUTELY SAFE)
+    # -------------------------------------------------------------------------
 
-    # =============================================================================
-    # XLSX EXPORT (SAFE CHECK)
-    # =============================================================================
+    json_data = {}
 
-    xlsx_available = True
-    try:
-        import openpyxl  # noqa
-    except Exception:
-        xlsx_available = False
+    for swg in SWG_LIST:
+        df = st.session_state[f"{swg}_data"]
 
-    def to_excel_bytes(df):
-        buffer = io.BytesIO()
-        with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
-            df.to_excel(writer, index=False, sheet_name="Energy Data")
-        return buffer.getvalue()
+        records = []
+        for _, row in df.iterrows():
+            clean_row = {}
+            for col, val in row.items():
+                clean_row[col] = sanitize_value(val)
+            records.append(clean_row)
 
-    # =============================================================================
-    # DOWNLOAD BUTTONS
-    # =============================================================================
+        json_data[swg.replace("SWG", "SWG-")] = records
+
+    json_bytes = json.dumps(json_data, indent=2).encode("utf-8")
+
+    # -------------------------------------------------------------------------
+    # 6️⃣ DOWNLOAD BUTTONS
+    # -------------------------------------------------------------------------
 
     c1, c2, c3 = st.columns(3)
 
     with c1:
         st.download_button(
             "⬇️ Download CSV",
-            data=csv_buffer.getvalue(),
-            file_name="energy_data.csv",
+            data=csv_bytes,
+            file_name="SWG_Data.csv",
             mime="text/csv",
-            use_container_width=True,
+            use_container_width=True
         )
 
     with c2:
-        if xlsx_available:
-            st.download_button(
-                "⬇️ Download XLSX",
-                data=to_excel_bytes(export_df),
-                file_name="energy_data.xlsx",
-                mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-                use_container_width=True,
-            )
-        else:
-            st.info("XLSX export unavailable (openpyxl not installed).")
+        st.download_button(
+            "⬇️ Download Excel",
+            data=excel_bytes,
+            file_name="SWG_Data.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True
+        )
 
     with c3:
         st.download_button(
             "⬇️ Download JSON",
-            data=json_buffer,
-            file_name="energy_data.json",
+            data=json_bytes,
+            file_name="SWG_Data.json",
             mime="application/json",
-            use_container_width=True,
+            use_container_width=True
         )
 
-st.markdown('</div>', unsafe_allow_html=True)
+else:
+    st.info("Download section is hidden.")
 
 # =============================================================================
-# END PART 5
+# END DOWNLOAD DATA
 # =============================================================================
+
